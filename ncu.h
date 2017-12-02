@@ -1,63 +1,41 @@
 // Author:  Benjamin Johnson
-// Date:    July 29, 2017
-// Purpose: Lays out useful functions for handling the interface
+// Date:    2 December, 2017
+// Version: 0.2
+// Purpose: Provide an abstraction over ncurses to aid in
+//          relatively simple command line inteface creation
 
 
-#ifndef NCURSES_UTILS_H
-#define NCURSES_UTILS_H
+#ifndef NCU_H
+#define NCU_H
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
-#include <ncurses.h>
-#include <panel.h>
+
 using namespace std;
 
-enum BoxType {NO_BOX, BOX, INPUT_BOX};
 
-class Window {
-	public:
-		WINDOW *win;
-		PANEL  *panel;
-		int h;
-		int w;
-		int y;
-		int x;
-		BoxType b; //	STOPPED HERE
+enum elementType {
+    NCU_BASIC_BOX,
+    NCU_BASIC_INPUT
 };
 
-class Layout {
-	public:
-		vector<string> l;
-		bool overwrite;
-		bool clearScreen;
+class Element {
+    public:
+    private:
+        string name;
 };
 
-class NcursesUtils {
-	private:
-		map<string, Window> wins;
-		map<string, Layout> layouts;
-		map<string, bool> visible;
+class NCU {
+    public:
+        void start();
+        void end();
 
-	public:
-		void init();
-		void addWin(string name, int h, int w, int y, int x, BoxType b);
-		void addLayout(string name, vector<string> winlist, bool owb, bool csb);
-		void showLayout(string layout);
-		void hideLayout(string layout);
-		void showWin(string name);
-		void hideWin(string name);
-		void boxWin(string name, BoxType b);
-		void unboxWin(string name);
-		bool showing(string layout);
-		void clearWin(string name);
-		void printWin(string name, int h, int w, string s);
-		void clrPrintWin(string name, int h, int w, string s);
-		string getInput(string name);
-		int getWinWidth(string name);
-
-		WINDOW* getWin(string name);
+        void addElement(string name, elementType type,
+                        int sizex, int sizey,
+                        int posx, int posy);
+    private:
+        map<string, Element*> elementList;
 };
 
 #endif
