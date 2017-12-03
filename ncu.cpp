@@ -31,6 +31,10 @@ void NCU::start() {
     c = COLS;
 }
 
+void NCU::hideCursor() {
+    cursor = false;
+    curs_set(0);
+}
 void NCU::addElement(string id, elementType type, int sizex, int sizey, int posx, int posy) {
     check_if_started();
 
@@ -40,18 +44,27 @@ void NCU::addElement(string id, elementType type, int sizex, int sizey, int posx
 
     // fill in info
     e->etype = type;
+    e->win = newwin(sizey, sizex, posy, posx);
+
+    if (type == NCU_BORDER_BOX) box(e->win, 0, 0);
+    if (type == NCU_BASIC_INPUT) wborder(getWin(id), ' ', ' ', ' ', 0, ' ', ' ', 0, 0);
 
     // add to map
     elementList.insert(make_pair(id, e));
 }
 
-void NCU::write(string id, string data, int posx, int posy) {
-    WINDOW *win = getWin(id);
-    if (win != NULL) mvwprintw(win, posx, posy, data.c_str());
+void NCU::addTitle(string id, string title) {
+    title = " " + title + " ";
+    this->write(id, title, 1, 0);
 }
 
-void showElement(string id) {
-    show_win(getWin(id));
+void NCU::write(string id, string data, int posx, int posy) {
+    WINDOW *win = getWin(id);
+    if (win != NULL) mvwprintw(win, posy, posx, data.c_str());
+}
+
+void NCU::showElement(string id) {
+    wrefresh(getWin(id));
 }
 
 void NCU::end() {
@@ -67,11 +80,11 @@ void NCU::check_if_started() {
 
 // utilitarian crap -----------------------------------------------
 
-int NCU::cols() {
+int NCU::width() {
     return c;
 }
 
-int NCU::rows() {
+int NCU::height() {
     return r;
 }
 

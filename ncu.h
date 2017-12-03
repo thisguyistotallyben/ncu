@@ -41,16 +41,21 @@ class NCU {
         void addElement(string id, elementType type,
                         int sizex, int sizey,
                         int posx, int posy);
+        void addTitle(string id, string title);
         void showElement(string id);
         void write(string id, string data, int posx, int posy);
-        int cols();
-        int rows();
+
+        void hideCursor();
+
+        int width();
+        int height();
     private:
         void check_if_started();
         WINDOW* getWin(string id);
 
         map<string, Element*> elementList;
         bool NCU_STARTED = false;
+        bool cursor = true;
         string focus;
         int r = 0;
         int c = 0;
