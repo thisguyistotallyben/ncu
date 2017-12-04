@@ -65,7 +65,11 @@ void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, i
     e->id = id;
     e->title = "";
     e->btype = bt;
+    e->width = sizex;
     e->win = newwin(sizey, sizex, posy, posx);
+    wrefresh(e->win);
+    e->panel = new_panel(e->win);
+    hide_panel(e->panel);
 
     // add to map
     elementList.insert(make_pair(id, e));
@@ -111,8 +115,11 @@ void NCU::borderElement(string id, borderType bt) {
     // add title back if neccessary
     if (e->title != "") addTitle(id, e->title);
 
-    // refresh
-    wrefresh(e->win);
+    //wrefresh(e->win);
+
+    // update
+    update_panels();
+    doupdate();
 }
 
 // updateElement
@@ -152,6 +159,10 @@ void NCU::clearElement(string id) {
 void NCU::write(string id, string data, int posx, int posy) {
     WINDOW *win = getWin(id);
     if (win != NULL) mvwprintw(win, posy, posx, data.c_str());
+    
+    // update
+    update_panels();
+    doupdate();
 }
 
 // read
@@ -161,11 +172,12 @@ void NCU::write(string id, string data, int posx, int posy) {
 // TODO: add to only read from valid input boxes
 string NCU::read(string id) {
     char c;
-    string s;
+    string s = "", ns;
     WINDOW *win;
 
     // setup
     win = getWin(id);
+    Element *e = getElement(id);
     cbreak();
     if(!cursor) curs_set(1);
     wmove(win, 1, 2);
@@ -181,8 +193,14 @@ string NCU::read(string id) {
                 s = s + c;
         }
 
+        clearElement(id);
         
+        // TODO: FIX THIS HARD CODED MESS
+        if (s.size() > e->width-4) ns = s.substr(s.size()-(e->width-4-1), s.size()-1);
+        else ns = s;
+        this->write(id, ns, 2, 1);
     }
+
     
     if (!cursor) curs_set(0);
 }
@@ -190,7 +208,12 @@ string NCU::read(string id) {
 // showElement
 // initially shows an element
 void NCU::showElement(string id) {
-    wrefresh(getWin(id));
+    PANEL *p = getPanel(id);
+    if (p != NULL) show_panel(p);
+
+    // update
+    update_panels();
+    doupdate();
 }
 
 // wait
@@ -210,7 +233,48 @@ void NCU::check_if_started() {
     }
 }
 
-// utilitarian crap -----------------------------------------------
+// group functions -------------------------------------------------------------------
+
+void NCU::addGroup(string id, int num, ...) {
+    va_list vl;
+    string s;
+    Group *g;
+    va_start(vl, num);
+
+    // setup
+    g = new Group;
+
+    // build group names
+    for (int i = 0; i < num; i++) {
+        s = va_arg(vl, char*);
+        g->elements.push_back(s);
+    }
+
+    // insert
+    groupList.insert(make_pair(id, g));
+}
+
+void NCU::show(string id) {
+    map<string, Group*>::iterator git;
+    PANEL *p;
+
+    // get the group
+    git = groupList.find(id);
+
+    // show the group
+    if (git != groupList.end()) {
+        for (int i = 0; i < git->second->elements.size(); i++) {
+            p = getPanel(git->second->elements[i]);
+            if (p != NULL) show_panel(p);
+        }
+    }
+
+    // update
+    update_panels();
+    doupdate();
+}
+
+// utilitarian crap ------------------------------------------------------------------
 
 int NCU::width() {
     return c;
@@ -225,6 +289,14 @@ WINDOW* NCU::getWin(string id) {
 
     e = elementList.find(id);
     if (e != elementList.end()) return e->second->win;
+    else return NULL;
+}
+
+PANEL* NCU::getPanel(string id) {
+    map<string, Element*>::iterator e;
+
+    e = elementList.find(id);
+    if (e != elementList.end()) return e->second->panel;
     else return NULL;
 }
 

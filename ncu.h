@@ -34,6 +34,14 @@ class Element {
         PANEL  *panel;
 
         bool visible;
+
+        int width;
+};
+
+class Group {
+    public:
+        string id;
+        vector<string> elements;
 };
 
 class NCU {
@@ -44,7 +52,6 @@ class NCU {
         void addElement(string id, borderType bt,
                         int sizex, int sizey,
                         int posx, int posy);
-        void addGroup(string id, ...);
         void borderElement(string id, borderType bt);
         void addTitle(string id, string title);
         void showElement(string id);
@@ -55,6 +62,9 @@ class NCU {
 
         void hideCursor();
 
+        void addGroup(string id, int num, ...);
+        void show(string id);
+
         void wait(char key);
 
         int width();
@@ -63,9 +73,11 @@ class NCU {
         void check_if_started();
         WINDOW* getWin(string id);
         Element* getElement(string id);
+        PANEL* getPanel(string id);
         void borderElement(string id);
 
         map<string, Element*> elementList;
+        map<string, Group*> groupList;
         bool NCU_STARTED = false;
         bool cursor = true;
         string focus;
