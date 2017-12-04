@@ -42,8 +42,6 @@ void NCU::end() {
     
     // clean up elements
     for (eit = elementList.begin(); eit != elementList.end(); eit++) {
-        delete eit->second->win;
-        delete eit->second->panel;
         delete eit->second;
     }
 
