@@ -42,6 +42,8 @@ void NCU::end() {
     
     // clean up elements
     for (eit = elementList.begin(); eit != elementList.end(); eit++) {
+        delete eit->second->win;
+        delete eit->second->panel;
         delete eit->second;
     }
 
@@ -114,8 +116,6 @@ void NCU::borderElement(string id, borderType bt) {
 
     // add title back if neccessary
     if (e->title != "") addTitle(id, e->title);
-
-    //wrefresh(e->win);
 
     // update
     update_panels();
@@ -195,9 +195,11 @@ string NCU::read(string id) {
 
         clearElement(id);
         
-        // TODO: FIX THIS HARD CODED MESS
+        // makes sure the string does not exceed the box size
         if (s.size() > e->width-4) ns = s.substr(s.size()-(e->width-4-1), s.size()-1);
         else ns = s;
+
+        // write to box
         this->write(id, ns, 2, 1);
     }
 
