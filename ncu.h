@@ -25,6 +25,20 @@ enum borderType {
     NCU_NO_CHANGE // users: don't use this
 };
 
+enum subType {
+    NCU_SUB_TITLE_OUTPUT,
+    NCU_SUB_TITLE_INPUT,
+    NCU_SUB_OUTPUT,
+    NCU_SUB_INPUT
+};
+
+class SubElement {
+    public:
+        string id;
+        string text;
+        SubElement *link;
+};
+
 class Element {
     public:
         string id;
@@ -46,9 +60,14 @@ class Group {
 
 class NCU {
     public:
+        // alpha and omega
         void start();
         void end();
 
+        // subelement stuff
+        void addSubElement(string id, subType, ...);
+
+        // element stuff
         void addElement(string id, borderType bt,
                         int sizex, int sizey,
                         int posx, int posy);
@@ -56,19 +75,22 @@ class NCU {
         void addTitle(string id, string title);
         void showElement(string id);
         void clearElement(string id);
-        void write(string id, string data, int posx, int posy);
-        string read(string id);
         void updateElement(string id);
 
-        void hideCursor();
-
+        // group stuff
         void addGroup(string id, int num, ...);
-        void show(string id);
+        void showGroup(string id);
 
+        // i/o
+        void write(string id, string data, int posx, int posy);
+        string read(string id);
+
+        // utilities
+        void hideCursor();
         void wait(char key);
-
         int width();
         int height();
+
     private:
         void check_if_started();
         WINDOW* getWin(string id);

@@ -10,11 +10,17 @@
 #include <vector>
 #include <map>
 #include <ncurses.h>
+#include <stdio.h>
 #include <panel.h>
 #include <cstdarg>
 #include "ncu.h"
 
 using namespace std;
+
+
+// IDEA CENTRAL
+// TODO: make subelements for form filling or something
+// TODO: possibly be able to link subelements together
 
 
 // setup and cleanup -----------------------------------------------------------------
@@ -48,7 +54,7 @@ void NCU::end() {
     endwin();
 }
 
-// element creation and manipulation -------------------------------------------------
+// sub element things ----------------------------------------------------------------
 
 // addElement
 // creates a new element and adds it to the element list
@@ -169,7 +175,8 @@ void NCU::write(string id, string data, int posx, int posy) {
 // also will probably bite me in the butt later
 // TODO: add to only read from valid input boxes
 string NCU::read(string id) {
-    char c;
+    int c;
+    int curpos = 2;
     string s = "", ns;
     WINDOW *win;
 
@@ -182,13 +189,32 @@ string NCU::read(string id) {
     
     while (1) {
         c = wgetch(win);
-        switch(c) {
-            case 10: // enter
-                //clearWin(name);
-                curs_set(0);
-                return s;
-            default:
-                s = s + c;
+        if (c < 127 && c > 31) {
+            s = s + (char)c;
+        }
+        else {
+            switch(c) {
+                case 10: // enter
+                    //clearWin(name);
+                    curs_set(0);
+                    return s;
+                case 27: // esc
+                    clearElement(id);
+                    if (!cursor) curs_set(0);
+                    return "";
+                case 127: // backspace
+                    if (s.size() > 0) {
+                        s = s.substr(0, s.size() - 1);
+                        curpos--;
+                    }
+                    break;
+                case KEY_LEFT:
+                    s +=  "key";
+                    break;
+                default:
+                    break;
+                    curpos++;
+            }
         }
 
         clearElement(id);
@@ -199,6 +225,7 @@ string NCU::read(string id) {
 
         // write to box
         this->write(id, ns, 2, 1);
+        wmove(win, 1, ns.size() + 2);
     }
 
     
@@ -254,7 +281,7 @@ void NCU::addGroup(string id, int num, ...) {
     groupList.insert(make_pair(id, g));
 }
 
-void NCU::show(string id) {
+void NCU::showGroup(string id) {
     map<string, Group*>::iterator git;
     PANEL *p;
 
