@@ -21,6 +21,7 @@ using namespace std;
 // IDEA CENTRAL
 // TODO: make subelements for form filling or something
 // TODO: possibly be able to link subelements together
+// TODO: add rightOf(), leftOf(), above(), below() functions for positioning
 
 
 // setup and cleanup -----------------------------------------------------------------
