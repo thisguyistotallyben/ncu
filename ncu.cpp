@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <panel.h>
 #include <cstdarg>
+#include <algorithm>
 #include "ncu.h"
 
 using namespace std;
@@ -37,6 +38,7 @@ void NCU::start() {
     NCU_STARTED = true;
     r = LINES;
     c = COLS;
+
 }
 
 void NCU::hideCursor() {
@@ -53,6 +55,47 @@ void NCU::end() {
     }
 
     endwin();
+}
+
+// alert
+int NCU::alert(string s) {
+	int c;
+	int i, next;
+	int nl = count(s.begin(), s.end(), '\n');
+	nl++;
+
+	alertw = newwin(nl + 2, COLS, LINES/2 - (nl + 2)/2, 0);
+	alertp = new_panel(alertw);
+
+	// setup
+	wbkgd(alertw, COLOR_PAIR(1));
+	
+	for (int i = 0; i < nl; i++) {
+		next = s.find('\n');
+		if (next != -1) s[next] = '\0';
+		else next = s.size();
+
+		mvwprintw(alertw, i + 1, COLS/2 - next/2, s.c_str());
+		s = s.erase(0, next+1);
+	}
+
+	// show panel
+	show_panel(alertp);
+	
+    // update
+    update_panels();
+    doupdate();
+	
+	// wait to kill
+	c = getch();
+
+	// hide
+	hide_panel(alertp);
+    // update
+    update_panels();
+    doupdate();
+
+	return c;
 }
 
 // sub element things ----------------------------------------------------------------
@@ -161,6 +204,11 @@ void NCU::clearElement(string id) {
 // writes to an element
 // not to be confused with the real write
 // that'll probably come back and bite me in the butt
+void NCU::cwrite(string id, string data, int posx, int posy) {
+	clearElement(id);
+	write(id, data, posx, posy);
+}
+
 void NCU::write(string id, string data, int posx, int posy) {
     WINDOW *win = getWin(id);
     if (win != NULL) mvwprintw(win, posy, posx, data.c_str());

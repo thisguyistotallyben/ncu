@@ -83,6 +83,7 @@ class NCU {
 
         // i/o
         void write(string id, string data, int posx, int posy);
+        void cwrite(string id, string data, int posx, int posy);
         string read(string id);
 
         // utilities
@@ -90,6 +91,7 @@ class NCU {
         void wait(char key);
         int width();
         int height();
+		int alert(string s);
 
     private:
         void check_if_started();
@@ -105,6 +107,10 @@ class NCU {
         string focus;
         int r = 0;
         int c = 0;
+
+		// alert message
+		WINDOW *alertw;
+		PANEL *alertp;
 };
 
 #endif
