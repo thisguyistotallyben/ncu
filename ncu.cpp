@@ -292,6 +292,17 @@ void NCU::showElement(string id) {
     doupdate();
 }
 
+// hideElement
+// hides an element
+void NCU::hideElement(string id) {
+    PANEL *p = getPanel(id);
+    if (p != NULL) hide_panel(p);
+
+    // update
+    update_panels();
+    doupdate();
+}
+
 // wait
 // just a while loop waiting for a key
 // i'm not completely sure y tho
@@ -342,6 +353,26 @@ void NCU::showGroup(string id) {
         for (int i = 0; i < git->second->elements.size(); i++) {
             p = getPanel(git->second->elements[i]);
             if (p != NULL) show_panel(p);
+        }
+    }
+
+    // update
+    update_panels();
+    doupdate();
+}
+
+void NCU::hideGroup(string id) {
+    map<string, Group*>::iterator git;
+    PANEL *p;
+
+    // get the group
+    git = groupList.find(id);
+
+    // show the group
+    if (git != groupList.end()) {
+        for (int i = 0; i < git->second->elements.size(); i++) {
+            p = getPanel(git->second->elements[i]);
+            if (p != NULL) hide_panel(p);
         }
     }
 

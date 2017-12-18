@@ -74,12 +74,14 @@ class NCU {
         void borderElement(string id, borderType bt);
         void addTitle(string id, string title);
         void showElement(string id);
+		void hideElement(string id);
         void clearElement(string id);
         void updateElement(string id);
 
         // group stuff
         void addGroup(string id, int num, ...);
         void showGroup(string id);
+		void hideGroup(string id);
 
         // i/o
         void write(string id, string data, int posx, int posy);

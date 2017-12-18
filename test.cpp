@@ -50,6 +50,8 @@ int main() {
 	
 	// wait
 	ncu.wait('q');
+	ncu.hideGroup("group");
+	ncu.wait('q');
 
 	// cleanup
 	ncu.end();
