@@ -25,18 +25,19 @@ enum borderType {
     NCU_NO_CHANGE // users: don't use this
 };
 
-enum subType {
-    NCU_SUB_TITLE_OUTPUT,
-    NCU_SUB_TITLE_INPUT,
-    NCU_SUB_OUTPUT,
-    NCU_SUB_INPUT
+enum formType {
+    NCU_FORM_TITLE,
+    NCU_FORM_NO_TITLE
 };
 
-class SubElement {
+class Form {
     public:
         string id;
-        string text;
-        SubElement *link;
+        string *data;
+		formType ftype;
+
+		int posx;
+		int posy;
 };
 
 class Element {
@@ -47,9 +48,12 @@ class Element {
         WINDOW *win;
         PANEL  *panel;
 
+		// visual things
         bool visible;
-
         int width;
+
+		// form things
+		map<string, Form*> formList;
 };
 
 class Group {
@@ -64,9 +68,6 @@ class NCU {
         void start();
         void end();
 
-        // subelement stuff
-        void addSubElement(string id, subType, ...);
-
         // element stuff
         void addElement(string id, borderType bt,
                         int sizex, int sizey,
@@ -77,6 +78,11 @@ class NCU {
 		void hideElement(string id);
         void clearElement(string id);
         void updateElement(string id);
+
+		// forms
+		void addForm(string eid, string fid, formType ft, int posx, int posy);
+		void linkForm(string eid, string fid, string *data);
+		void updateForms(string eid);
 
         // group stuff
         void addGroup(string id, int num, ...);
@@ -94,12 +100,15 @@ class NCU {
         int width();
         int height();
 		int alert(string s);
+		void startDebug();
+		void endDebug();
 
     private:
         void check_if_started();
         WINDOW* getWin(string id);
         Element* getElement(string id);
         PANEL* getPanel(string id);
+		Form* getForm(string eid, string fid);
         void borderElement(string id);
 
         map<string, Element*> elementList;

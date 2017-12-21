@@ -320,6 +320,49 @@ void NCU::check_if_started() {
     }
 }
 
+// form functions --------------------------------------------------------------------
+
+void NCU::addForm(string eid, string fid, formType ft, int posx, int posy) {
+	Element *e;
+	Form *f;
+
+	// setup
+	e = getElement(eid);
+	
+	if (e != NULL) {
+		cout << "in\n";
+		f = new Form;
+		
+		// info filler
+		f->id = fid;
+		string *s;
+		*s = "empty";
+		f->data = s;
+		f->ftype = ft;
+		f->posx = posx;
+		f->posy = posy;
+
+		e->formList.insert(make_pair(fid, f));
+	}
+}
+
+void NCU::linkForm(string eid, string fid, string *data) {
+	Form *f = getForm(eid, fid);
+	
+	if (f != NULL) f->data = data;
+}
+
+void NCU::updateForms(string eid) {
+	Element *e = getElement(eid);
+	map<string, Form*>::iterator fit;
+	
+	if (e == NULL) return;
+
+	for (fit = e->formList.begin(); fit != e->formList.end(); e++) {
+		this->write(eid, fit->second->id + ": " + *(fit->second->data), fit->second->posy, fit->second->posx);
+	}
+}
+
 // group functions -------------------------------------------------------------------
 
 void NCU::addGroup(string id, int num, ...) {
@@ -412,4 +455,29 @@ Element* NCU::getElement(string id) {
     e = elementList.find(id);
     if (e != elementList.end()) return e->second;
     else return NULL;
+}
+
+Form* NCU::getForm(string eid, string fid) {
+	map<string, Element*>::iterator e;
+	map<string, Form*>::iterator f;
+
+	e = elementList.find(eid);
+	if (e != elementList.end()) {
+		f = e->second->formList.find(fid);
+		if (f != e->second->formList.end()) {
+			return f->second;
+		}
+		else return NULL;
+	}
+	else return NULL;
+}
+
+void NCU::startDebug() {
+	def_prog_mode();
+	endwin();
+}
+
+void NCU::endDebug() {
+	reset_prog_mode();
+	refresh();
 }

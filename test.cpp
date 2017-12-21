@@ -1,3 +1,4 @@
+#include <iostream>
 #include "ncu.h"
 using namespace std;
 
@@ -28,6 +29,8 @@ int main() {
 
 	// show elements
 	ncu.showElement("navbar");
+
+	/*
 	ncu.wait('s');
 	ncu.cwrite("navbar", "TEST PROGRAM: Enter some text into the field and hit enter or ESC to cancel", 2, 1);
 
@@ -46,11 +49,23 @@ int main() {
 	if (c == 'y') ncu.showElement("box2");
 
 	// update the navbar
-	ncu.cwrite("navbar", "TEST PROGRAM: Test finished. Press 'q' to exit.", 2, 1);
-	
+	ncu.cwrite("navbar", "TEST PROGRAM: Press 'q' to move to form testing", 2, 1);
+	*/
+
 	// wait
 	ncu.wait('q');
-	ncu.hideGroup("group");
+
+	// form testing
+	ncu.startDebug();
+	cout << "wow this is debug?\n";
+	ncu.wait('q');
+	ncu.endDebug();
+
+	ncu.clearElement("box1");
+	//ncu.addForm("box1", "name", NCU_FORM_TITLE, 2, 2);
+	//ncu.updateForms("box1");
+	ncu.cwrite("navbar", "TEST PROGRAM: Form testing. Press 'q' to exit", 2, 1);
+
 	ncu.wait('q');
 
 	// cleanup
