@@ -51,6 +51,8 @@ class Element {
 		// visual things
         bool visible;
         int width;
+        int sizex, sizey;
+        int posx, posy;
 
 		// form things
 		map<string, Form*> formList;
@@ -102,6 +104,12 @@ class NCU {
 		int alert(string s);
 		void startDebug();
 		void endDebug();
+
+        // postional
+        int above(string id);
+        int below(string id);
+        int leftof(string id);
+        int rightof(string id);
 
     private:
         void check_if_started();

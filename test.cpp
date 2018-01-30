@@ -12,6 +12,13 @@ int main() {
 
 	// add elements
 	ncu.addElement("navbar", NCU_BORDER_BOX,     ncu.width(), 3, 0, 0);
+    ncu.addElement("below", NCU_BORDER_BOX,      20, 20, 0, ncu.below("navbar"));
+
+    ncu.showElement("navbar");
+    ncu.showElement("below");
+    ncu.wait('q');
+
+#if 0
 	ncu.addElement("intext", NCU_BORDERLESS_BOX, 9, 3, 0, 3);
 	ncu.addElement("input",  NCU_BASIC_INPUT,    20, 3, 9, 3);
 	ncu.addElement("box1",   NCU_BORDER_BOX,     ncu.width()/2, ncu.height()/2, 0, 6);
@@ -30,7 +37,6 @@ int main() {
 	// show elements
 	ncu.showElement("navbar");
 
-	/*
 	ncu.wait('s');
 	ncu.cwrite("navbar", "TEST PROGRAM: Enter some text into the field and hit enter or ESC to cancel", 2, 1);
 
@@ -50,7 +56,6 @@ int main() {
 
 	// update the navbar
 	ncu.cwrite("navbar", "TEST PROGRAM: Press 'q' to move to form testing", 2, 1);
-	*/
 
 	// wait
 	ncu.wait('q');
@@ -67,7 +72,7 @@ int main() {
 	ncu.cwrite("navbar", "TEST PROGRAM: Form testing. Press 'q' to exit", 2, 1);
 
 	ncu.wait('q');
-
+#endif
 	// cleanup
 	ncu.end();
 

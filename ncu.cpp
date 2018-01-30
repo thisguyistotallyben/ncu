@@ -116,6 +116,14 @@ void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, i
     e->title = "";
     e->btype = bt;
     e->width = sizex;
+
+    // dimensions
+    e->sizex = sizex;
+    e->sizey = sizey;
+    e->posx = posx;
+    e->posy = posy;
+
+    // win creation
     e->win = newwin(sizey, sizex, posy, posx);
     wrefresh(e->win);
     e->panel = new_panel(e->win);
@@ -480,4 +488,26 @@ void NCU::startDebug() {
 void NCU::endDebug() {
 	reset_prog_mode();
 	refresh();
+}
+
+// postional
+
+int NCU::above(string id) {
+    Element *e = getElement(id);
+    return e->posy;
+}
+
+int NCU::below(string id) {
+    Element *e = getElement(id);
+    return e->posy + e->sizey;
+}
+
+int NCU::leftof(string id) {
+    Element *e = getElement(id);
+    return e->posx;
+}
+
+int NCU::rightof(string id) {
+    Element *e = getElement(id);
+    return e->posx + e->sizex;
 }
