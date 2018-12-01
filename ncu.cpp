@@ -231,58 +231,125 @@ void NCU::write(string id, string data, int posx, int posy) {
 // not to be confused with the real read
 // also will probably bite me in the butt later
 // TODO: add to only read from valid input boxes
+
+// TODO: FIX THIS: IT IS WEIRD AND BROKEN
 string NCU::read(string id) {
+	bool goodchar;
     int c;
-    int curpos = 2;
+    int curpos = 0;
+	int strpos = 0;
+	int maxlen;
     string s = "", ns;
     WINDOW *win;
+
+
+	string sa = ""; // before cursor
+	string sb = ""; // after cursor
 
     // setup
     win = getWin(id);
     Element *e = getElement(id);
+	maxlen = e->width-4;
     cbreak();
     if(!cursor) curs_set(1);
-    wmove(win, 1, 2);
+    wmove(win, 1, curpos + 2);
     
+	// handle key presses
     while (1) {
-        c = wgetch(win);
+		goodchar = false;
+		wrefresh(win);
+        c = getch();
+		
+		// string modification
+		if (strpos > s.size()) strpos--;
+		if (strpos < 0) strpos = 0;
+			
+		sa = s.substr(0, strpos);
+		sb = s.substr(strpos, s.size()-1);
+
+		// visible chars
         if (c < 127 && c > 31) {
-            s = s + (char)c;
+			goodchar = true;
+			curpos++;
+			strpos++;
         }
+
+		// commanding chars
         else {
             switch(c) {
                 case 10: // enter
-                    //clearWin(name);
                     curs_set(0);
                     return s;
                 case 27: // esc
                     clearElement(id);
                     if (!cursor) curs_set(0);
                     return "";
-                case 127: // backspace
-                    if (s.size() > 0) {
-                        s = s.substr(0, s.size() - 1);
+                case KEY_BACKSPACE: // backspace
+                    if (sa.size() > 0) {
+                        //s = s.substr(0, s.size() - 1);
+						sa = sa.substr(0, sa.size()-1);
                         curpos--;
+						strpos--;
                     }
                     break;
                 case KEY_LEFT:
-                    s +=  "key";
+					curpos--;
+					strpos--;
                     break;
+				case KEY_RIGHT:
+					curpos++;
+					strpos++;
+					break;
                 default:
                     break;
-                    curpos++;
             }
         }
 
+		
+		// visible char to add to string at current position
+		if (goodchar) {
+			sa += (char)c;
+		}
+		s = sa + sb;
+
+		ns = s;
+
+		// check cursor bounds and set visible substring
+		if (curpos > s.size() || curpos > maxlen) {
+			// set correct position
+			curpos = maxlen;
+
+			// set visible portion of string
+			if (sa.size() > e->width-4) {
+				ns = sa.substr(sa.size()-1-maxlen, sa.size()-1);
+			}
+			/*
+			else {
+				ns = sa + sb.substr(0, sb.size()-e->width-5);
+			}
+			*/
+		}
+		if (curpos < 0) curpos = 0;
+
+		// set visible range
+		if (s.size() > maxlen) {
+			int asize = curpos;
+			int bsize = maxlen - curpos;
+			// IDK STOPPED HERE
+		}
+
         clearElement(id);
         
+		/*
         // makes sure the string does not exceed the box size
         if (s.size() > e->width-4) ns = s.substr(s.size()-(e->width-4-1), s.size()-1);
         else ns = s;
+		*/
 
         // write to box
         this->write(id, ns, 2, 1);
-        wmove(win, 1, ns.size() + 2);
+
+		wmove(win, 1, curpos + 2);
     }
 
     
@@ -510,4 +577,29 @@ int NCU::leftof(string id) {
 int NCU::rightof(string id) {
     Element *e = getElement(id);
     return e->posx + e->sizex;
+}
+
+void NCU::test(string id) {
+    int c;
+    WINDOW *win;
+
+    // setup
+    win = getWin(id);
+    cbreak();
+    
+    while (1) {
+        c = getch();
+		string s = "";
+		s += c;
+
+		this->clearElement(id);
+
+		if (c == KEY_LEFT) {
+			this->write(id, "LEFT", 2, 1);
+		}
+		else {
+			this->write(id, s, 2, 1);
+		}
+	}
+
 }

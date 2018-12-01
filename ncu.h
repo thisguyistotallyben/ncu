@@ -111,6 +111,9 @@ class NCU {
         int leftof(string id);
         int rightof(string id);
 
+		// DEBUG
+		void test(string id);
+
     private:
         void check_if_started();
         WINDOW* getWin(string id);
