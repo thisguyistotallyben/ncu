@@ -249,7 +249,7 @@ string NCU::read(string id) {
     // setup
     win = getWin(id);
     Element *e = getElement(id);
-	maxlen = e->width-4;
+	maxlen = e->width-5;
     cbreak();
     if(!cursor) curs_set(1);
     wmove(win, 1, curpos + 2);
@@ -336,6 +336,9 @@ string NCU::read(string id) {
 			int asize = curpos;
 			int bsize = maxlen - curpos;
 			// IDK STOPPED HERE
+
+			ns = sa.substr(sa.size()-asize-1, sa.size()-1) +
+				 sb.substr(0, sb.size()-bsize-1);
 		}
 
         clearElement(id);
@@ -350,6 +353,205 @@ string NCU::read(string id) {
         this->write(id, ns, 2, 1);
 
 		wmove(win, 1, curpos + 2);
+    }
+
+    
+    if (!cursor) curs_set(0);
+}
+
+// CHARACTERS ARE DISAPPEARING THROUGH SUBSTRINGS
+// AND I HAVE NO IDEA WHY
+string NCU::testRead(string id, string idb) {
+	bool goodchar;
+    int c;
+    int curpos = 0;
+	int strpos = 0;
+	int maxlen;
+    string s = "", ns;
+    WINDOW *win;
+
+
+	string sa = ""; // before cursor
+	string sb = ""; // after cursor
+
+    // setup
+    win = getWin(id);
+    Element *e = getElement(id);
+    Element *eb = getElement(idb);
+	maxlen = e->width-5;
+    cbreak();
+    curs_set(1);
+    wmove(win, 1, curpos + 2);
+    
+	// handle key presses
+    while (1) {
+		goodchar = false;
+		wrefresh(win);
+        c = getch();
+
+		// visible chars
+        if (c < 127 && c > 31) {
+			goodchar = true;
+			strpos++;
+        }
+
+		// commands
+		else {
+			switch(c) {
+				case 10: // enter
+					curs_set(0);
+					return s;
+				case KEY_LEFT:
+					strpos--;
+					break;
+				case KEY_RIGHT:
+					strpos++;
+					break;
+				default:
+					break;
+			}
+		}
+
+		/* SEG FAULT AVOIDANCE SYSTEM */
+
+		if (strpos < 0) strpos = 0;
+		if (strpos > s.size()) strpos = s.size();
+
+		/* PREPARE THE STRING PARTS */
+
+		// after cursor
+		sb = s.substr(strpos, s.size());
+		
+		// before cursor
+		sa = s.substr(0, strpos);
+		if (goodchar) {
+			sa += (char)c;
+			if (strpos == s.size())
+				strpos++;
+		}
+
+		/* MAKING THE STRING */
+	
+		s = sa + sb;
+		
+		// DEBUG
+        clearElement(idb);
+		string tmpa = s + " (" + sa + ") (" + sb + ")";
+		string tmpb = "CURSOR: " + to_string(curpos) + "\n  STRING: " + to_string(strpos);
+		this->write(idb, tmpa, 2, 1);
+		this->write(idb, tmpb, 2, 2);
+
+
+		// bounds
+
+		ns = s;
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+		
+		if (strpos != -1) {
+			sa = s.substr(0, strpos-1);
+			sb = s.substr(strpos, s.size());
+		}
+
+		// visible chars
+        if (c < 127 && c > 31) {
+			goodchar = true;
+			curpos++;
+			strpos++;
+        }
+
+		// commanding chars
+        else {
+            switch(c) {
+                case 10: // enter
+                    curs_set(0);
+                    return s;
+                case 27: // esc
+                    clearElement(id);
+                    if (!cursor) curs_set(0);
+                    return "";
+                case KEY_BACKSPACE: // backspace
+                    if (sa.size() > 0) {
+                        //s = s.substr(0, s.size() - 1);
+						sa = sa.substr(0, sa.size()-1);
+                        curpos--;
+						strpos--;
+                    }
+                    break;
+                case KEY_LEFT:
+					curpos--;
+					strpos--;
+                    break;
+				case KEY_RIGHT:
+					curpos++;
+					strpos++;
+					break;
+                default:
+                    break;
+            }
+        }
+
+		
+		// visible char to add to string at current position
+		if (goodchar) {
+			sa += (char)c;
+		}
+		s = sa + sb;
+
+		ns = s;
+
+		// check cursor bounds and set visible substring
+		if (curpos > s.size() || curpos > maxlen) {
+			// set correct position
+			curpos = maxlen;
+
+			// set visible portion of string
+			if (sa.size() > e->width-4) {
+				ns = sa.substr(sa.size()-1-maxlen, sa.size()-1);
+			}
+			/*
+			else {
+				ns = sa + sb.substr(0, sb.size()-e->width-5);
+			}
+			*/
+		}
+		if (curpos < 0) curpos = 0;
+
+		// set visible range
+		if (s.size() > maxlen) {
+			int asize = curpos;
+			int bsize = maxlen - curpos;
+			// IDK STOPPED HERE
+
+			ns = sa.substr(sa.size()-asize-1, sa.size()-1) +
+				 sb.substr(0, sb.size()-bsize-1);
+		}
+#endif
+
+        clearElement(id);
+        
+		/*
+        // makes sure the string does not exceed the box size
+        if (s.size() > e->width-4) ns = s.substr(s.size()-(e->width-4-1), s.size()-1);
+        else ns = s;
+		*/
+
+        // write to box
+        this->write(id, ns, 2, 1);
+
+
+		wmove(win, 1, strpos + 2); // CHANGED CURPOS TO STRPOS HERE
     }
 
     

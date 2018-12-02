@@ -113,6 +113,7 @@ class NCU {
 
 		// DEBUG
 		void test(string id);
+		string testRead(string id, string idb);
 
     private:
         void check_if_started();
