@@ -24,9 +24,6 @@ void NCU::start() {
 	// start model thread
 	thModel = thread(modelThread, this);
 	
-	// start view thread
-	thView = thread(viewThread, this);
-
 	// start controller thread
 	thControl = thread(controlThread);
 }
@@ -34,10 +31,9 @@ void NCU::start() {
 void NCU::stop() {
 	// tell the threads to stop
 	Command *c = new Command;
-	c->command = "FULLSTOP";
+	c->command = KILL;
 	commands.push(c);
 
-	thView.join();
 	thModel.join();
 	thControl.join();
 }
@@ -45,38 +41,54 @@ void NCU::stop() {
 
 // element things --------------------------------------------------------------------
 
-#if 0
 // addElement
 // creates a new element and adds it to the element list
 void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, int posy) {
+	Command *c = new Command;
+
+	c->command = CREATE_ELEMENT;
+	c->id = id;
+	c->bType = bt;
+	c->x = sizex;
+	c->y = sizey;
+	c->posx = posx;
+	c->posy = posy;
+
+	commands.push(c);
+}
+
+void NCU::internalAddElement(Command *c) {
     Element *e;
 
     // error checking
-    check_if_started();
+    //check_if_started();
 
     // setup
     e = new Element;
 
     // fill in info
-    e->id = id;
+    e->id = c->id;
     e->title = "";
-    e->btype = bt;
-    e->width = sizex;
+    e->btype = c->bType;
+    e->width = c->x;
 
     // dimensions
-    e->sizex = sizex;
-    e->sizey = sizey;
-    e->posx = posx;
-    e->posy = posy;
+    e->sizex = c->x;
+    e->sizey = c->y;
+    e->posx = c->posx;
+    e->posy = c->posy;
 
     // win creation
-    e->win = newwin(sizey, sizex, posy, posx);
+    e->win = newwin(c->y, c->x, c->posy, c->posx);
     wrefresh(e->win);
     e->panel = new_panel(e->win);
     hide_panel(e->panel);
+	
+	// DEBUG
+	//if (e->win == NULL) cout << "IN MAKE THIS IS NULL\n";
 
     // add to map
-    elementList.insert(make_pair(id, e));
+    elementList.insert(make_pair(c->id, e));
 
     // make the proper borders
     switch(e->btype) {
@@ -93,121 +105,114 @@ void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, i
     }
 }
 
-// borderElement
-// puts a border on an element after creation
-// NOTE: shows element even if not visible
-void NCU::borderElement(string id, borderType bt) {
-    Element *e = getElement(id);
-
-    if (e != NULL) {
-        if (bt != NCU_NO_CHANGE) e->btype = bt;
-
-        switch(e->btype) {
-            case NCU_BORDERLESS_BOX:
-                wborder(e->win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-                break;
-            case NCU_BORDER_BOX:
-                box(e->win, 0, 0);
-                break;
-            case NCU_BASIC_INPUT:
-                wborder(e->win, ' ', ' ', ' ', 0, ' ', ' ', 0, 0);
-                break;
-            default: break;
-        }
-    }
-
-    // add title back if neccessary
-    if (e->title != "") addTitle(id, e->title);
-
-    // update
-    update_panels();
-    doupdate();
+// showElement
+// initially shows an element
+void NCU::showElement(string id) {
+	Command *c = new Command;
+	c->command = SHOW_ELEMENT;
+	c->id = id;
+	commands.push(c);
 }
 
-// updateElement
-// pretty much the same thing as showElement
-// probably useless, idk
-void NCU::updateElement(string id) {
-    wrefresh(getWin(id));
+void NCU::internalShowElement(Command *c) {
+	PANEL *p;
+
+	p = getPanel(c->id);
+	if (p != NULL) show_panel(p);
+
+	// update
+	update_panels();
+	doupdate();
 }
 
-// addTitle
-// adds a title to an element
-// TODO: maybe add possible positons
-void NCU::addTitle(string id, string title) {
-    (getElement(id))->title = title;
-
-    if (title != "") {
-        title = " " + title + " ";
-        this->write(id, title, 1, 0);
-    }
-    else borderElement(id, NCU_NO_CHANGE);
+// hideElement
+// hides an element
+void NCU::hideElement(string id) {
+	Command *c = new Command;
+	c->command = HIDE_ELEMENT;
+	c->id = id;
+	commands.push(c);
 }
 
-// clearElement
-// clears all the data in an element except the title
-void NCU::clearElement(string id) {
-    WINDOW *win;
-    win = getWin(id);
+void NCU::internalHideElement(Command *c) {
+	PANEL *p;
 
-    werase(win);
-    borderElement(id, NCU_NO_CHANGE);
-}
+	p = getPanel(c->id);
+	if (p != NULL) hide_panel(p);
 
-// write
-// writes to an element
-// not to be confused with the real write
-// that'll probably come back and bite me in the butt
-void NCU::cwrite(string id, string data, int posx, int posy) {
-	clearElement(id);
-	write(id, data, posx, posy);
+	// update
+	update_panels();
+	doupdate();
 }
-#endif
 
 
 // pop-ups ---------------------------------------------------------------------------
 
 
 void NCU::notice(string s) {
-	cout << "NOTICE FUNCTION\n";
-	Command *c = new Command;
-
-	c->command = "notice";
-	c->args.push_back(s);
-	commands.push(c);
+	mNotice.lock();
+	thread tn(noticeThread, s, this);
+	tn.join();
+	mNotice.unlock();
 }
 
 // thready things --------------------------------------------------------------------
 
 
 void NCU::modelThread(NCU *ncu) {
-	cout << "model\n";
+	PANEL *p;
+
+	ncu->startView();
+	//cout << "model\n";
 
 	while(1) {
 		if (commands.size() == 0) continue;
 
 
 		Command *c = commands.front();
-		cout << "THING NOT EMPTY: " << c->command << endl;
+		//cout << "THING NOT EMPTY: " << c->command << endl;
 		commands.pop();
 
-		if (c->command == "FULLSTOP") {
-			cout << "full stop\n";
-			ncu->NCU_STARTED = false;
-			break;
+		// do things
+		ncu->mMain.lock();
+		switch(c->command) {
+			case KILL:
+				//cout << "full stop\n";
+				ncu->NCU_STARTED = false;
+				break;
+			case CREATE_ELEMENT:
+				ncu->internalAddElement(c);
+				break;
+			case SHOW_ELEMENT:
+				ncu->internalShowElement(c);
+				break;
+			case HIDE_ELEMENT:
+				ncu->internalHideElement(c);
+			default:
+				// literally no idea
+				break;
+
 		}
-		if (c->command == "notice") {
+		ncu->mMain.unlock();
+
+		// kill this thread and ncurses  when ready
+		if (!ncu->NCU_STARTED) {
+			// get all the mutexes
 			ncu->mNotice.lock();
-			cout << "  in notice if\n";
-			usleep(3000000);
+			ncu->mMain.lock();
+
+			endwin();
+			break;
+
+			// release the mutexes
 			ncu->mNotice.unlock();
+			ncu->mMain.unlock();
 		}
 	}
-
 }
 
-void NCU::viewThread(NCU *ncu) {
-	ncu->mMain.lock();
+void NCU::startView() {
+	mMain.lock();
 
     initscr();
     raw();
@@ -217,26 +222,48 @@ void NCU::viewThread(NCU *ncu) {
     init_pair(2, COLOR_BLACK, COLOR_YELLOW);
     init_pair(3, COLOR_WHITE, COLOR_RED);
     init_pair(4, COLOR_GREEN, COLOR_BLACK);
-    //noecho();
+    noecho();
     refresh();
-    ncu->NCU_STARTED = true;
-    ncu->r = LINES;
-    ncu->c = COLS;
+    curs_set(0);
+    NCU_STARTED = true;
+    r = LINES;
+    c = COLS;
 
-	ncu->mMain.unlock();
-
-	// DEBUG
-	
-	while(1) {
-		ncu->mNotice.lock();
-		if (ncu->NCU_STARTED == false) {
-			endwin();
-			break;
-		}
-		ncu->mNotice.unlock();
-	}
+	mMain.unlock();
 }
 
 void NCU::controlThread() {
 
+}
+
+void NCU::noticeThread(string s, NCU *ncu) {
+	//cout << "NOTICE FUNCTION\n";
+	Command *c = new Command;
+
+	// create the box
+	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, 40, 5, 0, 0);
+	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
+
+	usleep(3000000);
+
+	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
+
+	// FIXME: THIS WILL ONLY WORK ONCE. I NEED TO INITIALIZE THIS ELSEWHERE
+}
+
+
+// utilitarian crap ------------------------------------------------------------------
+
+
+PANEL* NCU::getPanel(string id) {
+	//cerr << "IN GET PANEL: ";
+    map<string, Element*>::iterator e;
+
+    e = elementList.find(id);
+    if (e != elementList.end()) {
+		//cout << "THING FOUND!!!!!!!!!! ";
+		//if (e->second->panel == NULL) cout << "THIS IS NULL\n";
+		return e->second->panel;
+	}
+    else return NULL;
 }

@@ -8,15 +8,6 @@
 using namespace std;
 
 
-// command class
-// I have no idea how I am going to do this,
-// so bear with me here
-class Command {
-	public:
-		string command;
-		vector<string> args;
-};
-
 enum borderType {
     NCU_BORDER_BOX,
     NCU_BORDERLESS_BOX,
@@ -27,6 +18,16 @@ enum borderType {
 enum formType {
     NCU_FORM_TITLE,
     NCU_FORM_NO_TITLE
+};
+
+enum commandType {
+	KILL,
+	CREATE_ELEMENT,
+	REMOVE_ELEMENT,
+	SHOW_ELEMENT,
+	HIDE_ELEMENT,
+	SHOW_GROUP,
+	HIDE_GROUP
 };
 
 class Form {
@@ -63,6 +64,29 @@ class Group {
         vector<string> elements;
 };
 
+// command class
+// I have no idea how I am going to do this,
+// so bear with me here
+class Command {
+	public:
+		commandType command;
+		string id;
+
+		// dimensions
+		int x;
+		int y;
+		int posx;
+		int posy;
+
+		// properties
+		borderType bType;
+		int colorScheme;
+		string text;
+
+		// idk maybe something
+		vector<string> args;
+};
+
 class NCU {
 	public:
 		// alpha and omega
@@ -96,8 +120,14 @@ class NCU {
 	private:
 		// thread functions
 		static void modelThread(NCU *ncu);
-		static void viewThread(NCU *ncu);
+		void startView();
 		static void controlThread();
+		static void noticeThread(string s, NCU *ncu);
+
+		// internal affairs
+		void internalAddElement(Command *c);
+		void internalShowElement(Command *c);
+		void internalHideElement(Command *c);
 
 		// go-getters
         WINDOW* getWin(string id);
