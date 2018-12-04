@@ -1,7 +1,7 @@
 all: test
 
 tmp: tmp.o ncu.o
-	g++ -o tmp tmp.o ncu.o -lncurses -lpanel
+	g++ -o tmp tmp.o ncu.o -lncurses -lpanel -lpthread
 
 test2: test2.o ncu.o
 	g++ -o test2 test2.o ncu.o -lncurses -lpanel
@@ -19,7 +19,7 @@ test2.o: test2.cpp ncu.h
 	g++ -c test2.cpp -lncurses -lpanel
 
 ncu.o: ncu.cpp ncu.h
-	g++ -c ncu.cpp -lncurses -lpanel
+	g++ -c ncu.cpp -lncurses -lpanel -lpthread
 
 clean:
 	rm  *.o

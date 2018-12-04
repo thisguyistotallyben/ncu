@@ -1,22 +1,21 @@
-// Author:  Benjamin Johnson
-// Date:    2 December, 2017
-// Version: 0.2
-// Purpose: Provide an abstraction over ncurses to aid in
-//          relatively simple command line inteface creation
-
-
-#ifndef NCU_H
-#define NCU_H
-
-#include <string>
 #include <vector>
+#include <map>
+#include <thread>
+#include <mutex>
 #include <ncurses.h>
 #include <panel.h>
-#include <map>
-#include <cstdarg>
 
 using namespace std;
 
+
+// command class
+// I have no idea how I am going to do this,
+// so bear with me here
+class Command {
+	public:
+		string command;
+		vector<string> args;
+};
 
 enum borderType {
     NCU_BORDER_BOX,
@@ -65,10 +64,10 @@ class Group {
 };
 
 class NCU {
-    public:
-        // alpha and omega
-        void start();
-        void end();
+	public:
+		// alpha and omega
+		void start();
+		void stop();
 
         // element stuff
         void addElement(string id, borderType bt,
@@ -81,11 +80,6 @@ class NCU {
         void clearElement(string id);
         void updateElement(string id);
 
-		// forms
-		void addForm(string eid, string fid, formType ft, int posx, int posy);
-		void linkForm(string eid, string fid, string *data);
-		void updateForms(string eid);
-
         // group stuff
         void addGroup(string id, int num, ...);
         void showGroup(string id);
@@ -96,44 +90,47 @@ class NCU {
         void cwrite(string id, string data, int posx, int posy);
         string read(string id);
 
-        // utilities
-        void hideCursor();
-        void wait(char key);
-        int width();
-        int height();
-		int alert(string s);
-		void startDebug();
-		void endDebug();
+		// pop-ups
+		void notice(string s);
 
-        // postional
-        int above(string id);
-        int below(string id);
-        int leftof(string id);
-        int rightof(string id);
+	private:
+		// thread functions
+		static void modelThread(NCU *ncu);
+		static void viewThread(NCU *ncu);
+		static void controlThread();
 
-		// DEBUG
-		void test(string id);
-		string testRead(string id, string idb);
-
-    private:
-        void check_if_started();
+		// go-getters
         WINDOW* getWin(string id);
         Element* getElement(string id);
         PANEL* getPanel(string id);
 		Form* getForm(string eid, string fid);
+
+		// other
+        void check_if_started();
         void borderElement(string id);
 
+		// object records
         map<string, Element*> elementList;
         map<string, Group*> groupList;
-        bool NCU_STARTED = false;
-        bool cursor = true;
-        string focus;
+
+		// parameters
         int r = 0;
         int c = 0;
+		bool NCU_STARTED = false;
+        bool cursor = true;
+		
+		// thread variables
+		thread thModel;
+		thread thView;
+		thread thControl;
+
+		mutex mMain;
+		mutex mNotice;
+
+		// states
+        string focus;
 
 		// alert message
 		WINDOW *alertw;
 		PANEL *alertp;
 };
-
-#endif
