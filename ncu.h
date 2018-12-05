@@ -69,6 +69,8 @@ class Group {
 // so bear with me here
 class Command {
 	public:
+		Command();
+		Command(commandType ct);
 		commandType command;
 		string id;
 
@@ -97,6 +99,7 @@ class NCU {
         void addElement(string id, borderType bt,
                         int sizex, int sizey,
                         int posx, int posy);
+		void removeElement(string id);
         void borderElement(string id, borderType bt);
         void addTitle(string id, string title);
         void showElement(string id);
@@ -117,17 +120,23 @@ class NCU {
 		// pop-ups
 		void notice(string s, int sec);
 
+		// other things and stuff
+		int width();
+		int height();
+
 	private:
 		// thread functions
-		static void modelThread(NCU *ncu);
-		void startView();
+		static void mainThread(NCU *ncu);
 		static void controlThread();
 		static void noticeThread(string s, int sec, NCU *ncu);
+
+		void startView();
 
 		// internal affairs
 		void internalAddElement(Command *c);
 		void internalShowElement(Command *c);
 		void internalHideElement(Command *c);
+		void internalRemoveElement(Command *c);
 
 		// go-getters
         WINDOW* getWin(string id);
@@ -150,8 +159,7 @@ class NCU {
         bool cursor = true;
 		
 		// thread variables
-		thread thModel;
-		thread thView;
+		thread thMain;
 		thread thControl;
 
 		mutex mMain;

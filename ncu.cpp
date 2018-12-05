@@ -20,33 +20,55 @@ using namespace std;
 queue<Command*> commands;
 
 
+Command::Command(commandType ct) {
+	command = ct;
+}
+
+Command::Command() {}
+
+
+// alpha and omega -------------------------------------------------------------------
+
+
 void NCU::start() {
 	// start model thread
-	thModel = thread(modelThread, this);
+	thMain = thread(mainThread, this);
 	
 	// start controller thread
 	thControl = thread(controlThread);
 }
 
 void NCU::stop() {
+    map<string, Element*>::iterator eit;
+
 	// tell the threads to stop
 	Command *c = new Command;
 	c->command = KILL;
 	commands.push(c);
 
-	thModel.join();
+	// wait for the threads to stop
+	thMain.join();
 	thControl.join();
+    
+    // no memory leaks here... probably
+    for (eit = elementList.begin(); eit != elementList.end(); eit++) {
+        delete eit->second;
+    }
 }
 
 
 // element things --------------------------------------------------------------------
 
+
+/* USER FUNCTIONS */
+
+
 // addElement
 // creates a new element and adds it to the element list
 void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, int posy) {
-	Command *c = new Command;
+	Command *c = new Command(CREATE_ELEMENT);
 
-	c->command = CREATE_ELEMENT;
+	// fill in info
 	c->id = id;
 	c->bType = bt;
 	c->x = sizex;
@@ -56,6 +78,33 @@ void NCU::addElement(string id, borderType bt, int sizex, int sizey, int posx, i
 
 	commands.push(c);
 }
+
+void NCU::removeElement(string id) {
+	Command *c = new Command(REMOVE_ELEMENT);
+	c->id = id;
+	commands.push(c);
+}
+
+// showElement
+// initially shows an element
+void NCU::showElement(string id) {
+	Command *c = new Command(SHOW_ELEMENT);
+	c->id = id;
+	commands.push(c);
+}
+
+// hideElement
+// hides an element
+void NCU::hideElement(string id) {
+	Command *c = new Command;
+	c->command = HIDE_ELEMENT;
+	c->id = id;
+	commands.push(c);
+}
+
+
+/* ACTUAL WORK FUNCTIONS */
+
 
 void NCU::internalAddElement(Command *c) {
     Element *e;
@@ -102,13 +151,13 @@ void NCU::internalAddElement(Command *c) {
     }
 }
 
-// showElement
-// initially shows an element
-void NCU::showElement(string id) {
-	Command *c = new Command;
-	c->command = SHOW_ELEMENT;
-	c->id = id;
-	commands.push(c);
+void NCU::internalRemoveElement(Command *c) {
+    map<string, Element*>::iterator eit;
+    
+	eit = elementList.find(c->id);
+	if (eit == elementList.end()) return;
+	delete eit->second;
+	elementList.erase(eit);
 }
 
 void NCU::internalShowElement(Command *c) {
@@ -120,15 +169,6 @@ void NCU::internalShowElement(Command *c) {
 	// update
 	update_panels();
 	doupdate();
-}
-
-// hideElement
-// hides an element
-void NCU::hideElement(string id) {
-	Command *c = new Command;
-	c->command = HIDE_ELEMENT;
-	c->id = id;
-	commands.push(c);
 }
 
 void NCU::internalHideElement(Command *c) {
@@ -153,10 +193,25 @@ void NCU::notice(string s, int sec) {
 	mNotice.unlock();
 }
 
+void NCU::noticeThread(string s, int sec, NCU *ncu) {
+	Command *c = new Command;
+
+	// create the box
+	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, ncu->width(), 3, 0, 0);
+	
+	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
+
+	usleep(sec*1000000);
+
+	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
+	ncu->removeElement("NCU_DO_NOT_USE_NOTICE");
+}
+
+
 // thready things --------------------------------------------------------------------
 
 
-void NCU::modelThread(NCU *ncu) {
+void NCU::mainThread(NCU *ncu) {
 	PANEL *p;
 
 	ncu->startView();
@@ -177,6 +232,9 @@ void NCU::modelThread(NCU *ncu) {
 				break;
 			case CREATE_ELEMENT:
 				ncu->internalAddElement(c);
+				break;
+			case REMOVE_ELEMENT:
+				ncu->internalRemoveElement(c);
 				break;
 			case SHOW_ELEMENT:
 				ncu->internalShowElement(c);
@@ -206,6 +264,10 @@ void NCU::modelThread(NCU *ncu) {
 	}
 }
 
+void NCU::controlThread() {
+
+}
+
 void NCU::startView() {
 	mMain.lock();
 
@@ -225,29 +287,12 @@ void NCU::startView() {
     c = COLS;
 	
 	// make the notice element
-	addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, 40, 5, 0, 0);
-	hideElement("NCU_DO_NOT_USE_NOTICE");
 
 	mMain.unlock();
 }
 
-void NCU::controlThread() {
 
-}
-
-void NCU::noticeThread(string s, int sec, NCU *ncu) {
-	Command *c = new Command;
-
-	// create the box
-	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
-
-	usleep(sec*1000000);
-
-	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
-}
-
-
-// utilitarian crap ------------------------------------------------------------------
+// utilitarian stuff -----------------------------------------------------------------
 
 
 PANEL* NCU::getPanel(string id) {
@@ -256,4 +301,12 @@ PANEL* NCU::getPanel(string id) {
     e = elementList.find(id);
     if (e != elementList.end()) return e->second->panel;
     else return NULL;
+}
+
+int NCU::width() {
+	return c;
+}
+
+int NCU::height() {
+	return r;
 }
