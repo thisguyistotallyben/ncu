@@ -187,24 +187,28 @@ void NCU::internalHideElement(Command *c) {
 
 
 void NCU::notice(string s, int sec) {
-	mNotice.lock();
-	thread tn(noticeThread, s, sec, this);
-	tn.join();
-	mNotice.unlock();
+	Command *c = new Command(NOTICE);
+	c->text = s;
+	c->val = sec;
+	commands.push(c);
+}
+
+void NCU::internalNotice(Command *c) {
+	cout << "HERE!!!!!!!!";
+	thread tn(noticeThread, c->text, c->val, this);
+	tn.detach();
 }
 
 void NCU::noticeThread(string s, int sec, NCU *ncu) {
-	Command *c = new Command;
+	//cout << "HERE";
+	ncu->mNotice.lock();
 
-	// create the box
-	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, ncu->width(), 3, 0, 0);
-	
 	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
 
 	usleep(sec*1000000);
 
 	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
-	ncu->removeElement("NCU_DO_NOT_USE_NOTICE");
+	ncu->mNotice.unlock();
 }
 
 
@@ -212,20 +216,20 @@ void NCU::noticeThread(string s, int sec, NCU *ncu) {
 
 
 void NCU::mainThread(NCU *ncu) {
+	cout << "BOOP";
 	PANEL *p;
 
 	ncu->startView();
-	//cout << "model\n";
 
 	while(1) {
 		if (commands.size() == 0) continue;
 
 
+		ncu->mMain.lock();
 		Command *c = commands.front();
 		commands.pop();
 
 		// do things
-		ncu->mMain.lock();
 		switch(c->command) {
 			case KILL:
 				ncu->NCU_STARTED = false;
@@ -241,6 +245,10 @@ void NCU::mainThread(NCU *ncu) {
 				break;
 			case HIDE_ELEMENT:
 				ncu->internalHideElement(c);
+			case NOTICE:
+				//cout << "INTERNAL NOTICE!!!";
+				ncu->internalNotice(c);
+				break;
 			default:
 				// literally no idea
 				break;
@@ -248,16 +256,15 @@ void NCU::mainThread(NCU *ncu) {
 		}
 		ncu->mMain.unlock();
 
-		// kill this thread and ncurses  when ready
+		// kill this thread and ncurses when ready
+		// all mutexes are necessary here
 		if (!ncu->NCU_STARTED) {
-			// get all the mutexes
 			ncu->mNotice.lock();
 			ncu->mMain.lock();
 
 			endwin();
 			break;
 
-			// release the kraken
 			ncu->mNotice.unlock();
 			ncu->mMain.unlock();
 		}
@@ -265,7 +272,8 @@ void NCU::mainThread(NCU *ncu) {
 }
 
 void NCU::controlThread() {
-
+	// "Good luck"
+	//   -me, probably
 }
 
 void NCU::startView() {
@@ -287,6 +295,8 @@ void NCU::startView() {
     c = COLS;
 	
 	// make the notice element
+	addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, c, 3, 0, 0);
+	hideElement("NCU_DO_NOT_USE_NOTICE");
 
 	mMain.unlock();
 }
