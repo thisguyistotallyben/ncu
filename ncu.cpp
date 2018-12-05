@@ -83,9 +83,6 @@ void NCU::internalAddElement(Command *c) {
     wrefresh(e->win);
     e->panel = new_panel(e->win);
     hide_panel(e->panel);
-	
-	// DEBUG
-	//if (e->win == NULL) cout << "IN MAKE THIS IS NULL\n";
 
     // add to map
     elementList.insert(make_pair(c->id, e));
@@ -149,9 +146,9 @@ void NCU::internalHideElement(Command *c) {
 // pop-ups ---------------------------------------------------------------------------
 
 
-void NCU::notice(string s) {
+void NCU::notice(string s, int sec) {
 	mNotice.lock();
-	thread tn(noticeThread, s, this);
+	thread tn(noticeThread, s, sec, this);
 	tn.join();
 	mNotice.unlock();
 }
@@ -170,14 +167,12 @@ void NCU::modelThread(NCU *ncu) {
 
 
 		Command *c = commands.front();
-		//cout << "THING NOT EMPTY: " << c->command << endl;
 		commands.pop();
 
 		// do things
 		ncu->mMain.lock();
 		switch(c->command) {
 			case KILL:
-				//cout << "full stop\n";
 				ncu->NCU_STARTED = false;
 				break;
 			case CREATE_ELEMENT:
@@ -204,7 +199,7 @@ void NCU::modelThread(NCU *ncu) {
 			endwin();
 			break;
 
-			// release the mutexes
+			// release the kraken
 			ncu->mNotice.unlock();
 			ncu->mMain.unlock();
 		}
@@ -228,6 +223,10 @@ void NCU::startView() {
     NCU_STARTED = true;
     r = LINES;
     c = COLS;
+	
+	// make the notice element
+	addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, 40, 5, 0, 0);
+	hideElement("NCU_DO_NOT_USE_NOTICE");
 
 	mMain.unlock();
 }
@@ -236,19 +235,15 @@ void NCU::controlThread() {
 
 }
 
-void NCU::noticeThread(string s, NCU *ncu) {
-	//cout << "NOTICE FUNCTION\n";
+void NCU::noticeThread(string s, int sec, NCU *ncu) {
 	Command *c = new Command;
 
 	// create the box
-	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, 40, 5, 0, 0);
 	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
 
-	usleep(3000000);
+	usleep(sec*1000000);
 
 	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
-
-	// FIXME: THIS WILL ONLY WORK ONCE. I NEED TO INITIALIZE THIS ELSEWHERE
 }
 
 
@@ -256,14 +251,9 @@ void NCU::noticeThread(string s, NCU *ncu) {
 
 
 PANEL* NCU::getPanel(string id) {
-	//cerr << "IN GET PANEL: ";
     map<string, Element*>::iterator e;
 
     e = elementList.find(id);
-    if (e != elementList.end()) {
-		//cout << "THING FOUND!!!!!!!!!! ";
-		//if (e->second->panel == NULL) cout << "THIS IS NULL\n";
-		return e->second->panel;
-	}
+    if (e != elementList.end()) return e->second->panel;
     else return NULL;
 }

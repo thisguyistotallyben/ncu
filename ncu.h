@@ -115,14 +115,14 @@ class NCU {
         string read(string id);
 
 		// pop-ups
-		void notice(string s);
+		void notice(string s, int sec);
 
 	private:
 		// thread functions
 		static void modelThread(NCU *ncu);
 		void startView();
 		static void controlThread();
-		static void noticeThread(string s, NCU *ncu);
+		static void noticeThread(string s, int sec, NCU *ncu);
 
 		// internal affairs
 		void internalAddElement(Command *c);

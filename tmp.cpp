@@ -4,6 +4,7 @@
 using namespace std;
 
 int main() {
+	string s;
 	NCU ncu;
 
 	ncu.start();
@@ -12,8 +13,8 @@ int main() {
 	ncu.addElement("box", NCU_BORDER_BOX, 10, 10, 0, 0);
 	ncu.showElement("box");
 	usleep(1000000);
-	ncu.notice("yeet");
-	usleep(1000000);
+	ncu.notice("yeet", 1);
+	cin >> s;
 	ncu.stop();
 
 	return 0;
