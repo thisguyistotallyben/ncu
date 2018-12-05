@@ -44,4 +44,7 @@ To interact with a text box, call `read(id)` which focuses the text box and retu
 I intend to implement form data, scroll boxes, tab moving, and probably plenty more than that.  I'll have a more cemented list soon.
 
 # Compiling
-Compile with flags: -std=c++11 -lpanel -lncurses
+
+You will need NCurses installed.
+
+Compile with flags: -std=c++11 -lpanel -lncurses -lpthread
