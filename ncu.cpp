@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <ncurses.h>
@@ -182,6 +183,16 @@ void NCU::internalHideElement(Command *c) {
 	doupdate();
 }
 
+void NCU::setColorScheme(string id, colorScheme cs) {
+	Command *c = new Command(SET_COLOR);
+	c->id = id;
+	c->cScheme = cs;
+	commands.push(c);
+}
+
+void NCU::internalSetColorScheme(Command *c) {
+	wbkgd(getWin(c->id), COLOR_PAIR(c->cScheme));
+}
 
 // pop-ups ---------------------------------------------------------------------------
 
@@ -190,32 +201,46 @@ void NCU::notice(string s, int sec) {
 	Command *c = new Command(NOTICE);
 	c->text = s;
 	c->val = sec;
+	c->cScheme = NCU_BLACK_ON_WHITE;
 	commands.push(c);
 }
 
+void NCU::notice(string s, int sec, colorScheme cs) {
+	Command *c = new Command(NOTICE);
+	c->text = s;
+	c->val = sec;
+	c->cScheme = cs;
+	commands.push(c);
+}
+
+
 void NCU::internalNotice(Command *c) {
-	thread tn(noticeThread, c->text, c->val, this);
+	thread tn(noticeThread, c, this);
 	tn.detach();
 }
 
-void NCU::noticeThread(string s, int sec, NCU *ncu) {
-	//cout << "HERE";
+void NCU::noticeThread(Command *c, NCU *ncu) {
+	int nl;
+	
+	// setup
 	ncu->mNotice.lock();
+	nl = count(c->text.begin(), c->text.end(), '\n') + 1;
 
-	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, ncu->width(), 3, 0, 0);
-	ncu->write("NCU_DO_NOT_USE_NOTICE", s, 2, 1);
+	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDERLESS_BOX, COLS, nl+2, 0, 0);
+	ncu->setColorScheme("NCU_DO_NOT_USE_NOTICE", c->cScheme);
+	ncu->write("NCU_DO_NOT_USE_NOTICE", c->text, 2, 1);
 
 	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
 
-	usleep(sec*1000000);
+	usleep(c->val*1000000);
 
+	// cleanup
 	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
 	ncu->mNotice.unlock();
 }
 
 
 void NCU::write(string id, string s, int posx, int posy) {
-	cout << "YES";
 	Command *c = new Command(WRITE);
 
 	c->id = id;
@@ -276,6 +301,8 @@ void NCU::mainThread(NCU *ncu) {
 			case WRITE:
 				ncu->internalWrite(c);
 				break;
+			case SET_COLOR:
+				ncu->internalSetColorScheme(c);
 			default:
 				// literally no idea
 				break;
@@ -310,11 +337,12 @@ void NCU::startView() {
     raw();
     keypad(stdscr, TRUE);
     start_color();
-    init_pair(1, COLOR_BLACK, COLOR_WHITE);
-    init_pair(2, COLOR_BLACK, COLOR_YELLOW);
-    init_pair(3, COLOR_WHITE, COLOR_RED);
-    init_pair(4, COLOR_GREEN, COLOR_BLACK);
-    noecho();
+    init_pair(NCU_BLACK_ON_WHITE, COLOR_BLACK, COLOR_WHITE);
+    init_pair(NCU_WHITE_ON_BLACK, COLOR_WHITE, COLOR_BLACK);
+    init_pair(NCU_BLACK_ON_YELLOW, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(NCU_WHITE_ON_RED, COLOR_WHITE, COLOR_RED);
+    init_pair(NCU_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
+    //noecho();
     refresh();
     curs_set(0);
     NCU_STARTED = true;

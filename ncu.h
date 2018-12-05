@@ -29,7 +29,17 @@ enum commandType {
 	SHOW_GROUP,
 	HIDE_GROUP,
 	NOTICE,
-	WRITE
+	WRITE,
+	SET_COLOR
+};
+
+enum colorScheme {
+	LOL_DO_NOT_USE_IS_1_INDEXED,
+	NCU_WHITE_ON_BLACK,
+	NCU_BLACK_ON_WHITE,
+	NCU_BLACK_ON_YELLOW,
+	NCU_WHITE_ON_RED,
+	NCU_WHITE_ON_GREEN
 };
 
 class Form {
@@ -85,7 +95,7 @@ class Command {
 
 		// properties
 		borderType bType;
-		int colorScheme;
+		colorScheme cScheme;
 		string text;
 
 		// idk maybe something
@@ -109,6 +119,7 @@ class NCU {
 		void hideElement(string id);
         void clearElement(string id);
         void updateElement(string id);
+		void setColorScheme(string id, colorScheme cs);
 
         // group stuff
         void addGroup(string id, int num, ...);
@@ -122,6 +133,7 @@ class NCU {
 
 		// pop-ups
 		void notice(string s, int sec);
+		void notice(string s, int sec, colorScheme cs);
 
 		// other things and stuff
 		int width();
@@ -131,7 +143,7 @@ class NCU {
 		// thread functions
 		static void mainThread(NCU *ncu);
 		static void controlThread();
-		static void noticeThread(string s, int sec, NCU *ncu);
+		static void noticeThread(Command *c, NCU *ncu);
 
 		void startView();
 
@@ -142,6 +154,7 @@ class NCU {
 		void internalRemoveElement(Command *c);
 		void internalNotice(Command *c);
 		void internalWrite(Command *c);
+		void internalSetColorScheme(Command *c);
 
 		// go-getters
         WINDOW* getWin(string id);
