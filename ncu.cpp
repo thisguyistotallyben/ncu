@@ -194,7 +194,6 @@ void NCU::notice(string s, int sec) {
 }
 
 void NCU::internalNotice(Command *c) {
-	cout << "HERE!!!!!!!!";
 	thread tn(noticeThread, c->text, c->val, this);
 	tn.detach();
 }
@@ -202,6 +201,9 @@ void NCU::internalNotice(Command *c) {
 void NCU::noticeThread(string s, int sec, NCU *ncu) {
 	//cout << "HERE";
 	ncu->mNotice.lock();
+
+	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, ncu->width(), 3, 0, 0);
+	ncu->write("NCU_DO_NOT_USE_NOTICE", s, 2, 1);
 
 	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
 
@@ -211,6 +213,28 @@ void NCU::noticeThread(string s, int sec, NCU *ncu) {
 	ncu->mNotice.unlock();
 }
 
+
+void NCU::write(string id, string s, int posx, int posy) {
+	cout << "YES";
+	Command *c = new Command(WRITE);
+
+	c->id = id;
+	c->text = s;
+	c->posx = posx;
+	c->posy = posy;
+
+	commands.push(c);
+}
+
+void NCU::internalWrite(Command *c) {
+    WINDOW *win = getWin(c->id);
+    if (win != NULL) mvwprintw(win, c->posy, c->posx, c->text.c_str());
+	else cout << "EMPTY";
+    
+    // update
+    update_panels();
+    doupdate();
+}
 
 // thready things --------------------------------------------------------------------
 
@@ -245,9 +269,12 @@ void NCU::mainThread(NCU *ncu) {
 				break;
 			case HIDE_ELEMENT:
 				ncu->internalHideElement(c);
+				break;
 			case NOTICE:
-				//cout << "INTERNAL NOTICE!!!";
 				ncu->internalNotice(c);
+				break;
+			case WRITE:
+				ncu->internalWrite(c);
 				break;
 			default:
 				// literally no idea
@@ -295,8 +322,8 @@ void NCU::startView() {
     c = COLS;
 	
 	// make the notice element
-	addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, c, 3, 0, 0);
-	hideElement("NCU_DO_NOT_USE_NOTICE");
+	//addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDER_BOX, c, 3, 0, 0);
+	//hideElement("NCU_DO_NOT_USE_NOTICE");
 
 	mMain.unlock();
 }
@@ -310,6 +337,14 @@ PANEL* NCU::getPanel(string id) {
 
     e = elementList.find(id);
     if (e != elementList.end()) return e->second->panel;
+    else return NULL;
+}
+
+WINDOW* NCU::getWin(string id) {
+    map<string, Element*>::iterator e;
+
+    e = elementList.find(id);
+    if (e != elementList.end()) return e->second->win;
     else return NULL;
 }
 

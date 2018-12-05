@@ -28,7 +28,8 @@ enum commandType {
 	HIDE_ELEMENT,
 	SHOW_GROUP,
 	HIDE_GROUP,
-	NOTICE
+	NOTICE,
+	WRITE
 };
 
 class Form {
@@ -140,6 +141,7 @@ class NCU {
 		void internalHideElement(Command *c);
 		void internalRemoveElement(Command *c);
 		void internalNotice(Command *c);
+		void internalWrite(Command *c);
 
 		// go-getters
         WINDOW* getWin(string id);
