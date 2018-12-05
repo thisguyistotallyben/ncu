@@ -86,6 +86,15 @@ void NCU::removeElement(string id) {
 	commands.push(c);
 }
 
+void NCU::addTitle(string id, string title) {
+	Command *c = new Command(WRITE);
+	c->id = id;
+	c->text = title;
+	c->posx = 1;
+	c->posy = 0;
+	commands.push(c);
+}
+
 // showElement
 // initially shows an element
 void NCU::showElement(string id) {
@@ -220,22 +229,40 @@ void NCU::internalNotice(Command *c) {
 }
 
 void NCU::noticeThread(Command *c, NCU *ncu) {
-	int nl;
+	string id, s;
+	int rows, cols, next, nl;
 	
 	// setup
 	ncu->mNotice.lock();
+	id = "NCU_DO_NOT_USE_NOTICE_42_SUPER_LONG";
+	s = c->text;
 	nl = count(c->text.begin(), c->text.end(), '\n') + 1;
+	rows = ncu->r;
+	cols = ncu->c;
 
-	ncu->addElement("NCU_DO_NOT_USE_NOTICE", NCU_BORDERLESS_BOX, COLS, nl+2, 0, 0);
-	ncu->setColorScheme("NCU_DO_NOT_USE_NOTICE", c->cScheme);
-	ncu->write("NCU_DO_NOT_USE_NOTICE", c->text, 2, 1);
+	// create the notice element
+	ncu->addElement(id, NCU_BORDERLESS_BOX, COLS, nl+2, 0, 0);
+	ncu->setColorScheme(id, c->cScheme);
+	
+	// Honestly, this entire for loop is super weird
+	// I must have been on drugs or something.
+	for (int i = 0; i < nl; i++) {
+		next = s.find('\n');
+		if (next != -1) s[next] = '\0';
+		else next = s.size();
 
-	ncu->showElement("NCU_DO_NOT_USE_NOTICE");
+		ncu->write(id, s, cols/2-next/2, i+1);
+		s = s.erase(0, next+1);
+	}
+
+	// show the notice
+	ncu->showElement(id);
 
 	usleep(c->val*1000000);
 
 	// cleanup
-	ncu->hideElement("NCU_DO_NOT_USE_NOTICE");
+	ncu->hideElement(id);
+	ncu->removeElement(id);
 	ncu->mNotice.unlock();
 }
 
