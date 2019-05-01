@@ -27,6 +27,12 @@ Command::Command(commandType ct) {
 
 Command::Command() {}
 
+void ncu::start() {
+	cout << "lol\n";
+}
+
+#if 0
+
 
 // alpha and omega -------------------------------------------------------------------
 
@@ -410,3 +416,4 @@ int NCU::width() {
 int NCU::height() {
 	return r;
 }
+#endif

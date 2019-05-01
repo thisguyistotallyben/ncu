@@ -7,6 +7,9 @@
 
 using namespace std;
 
+namespace ncu {
+	void start();
+}
 
 enum borderType {
     NCU_BORDER_BOX,
